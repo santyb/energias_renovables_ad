@@ -1,8 +1,7 @@
 pandas
-matplotlib.pyplot
+matplotlib
 streamlit
-datetime
 altair
-plotly.express
+plotly
 numpy
 openpyxl
