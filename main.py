@@ -1,10 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import streamlit as st
-from datetime import datetime
-import altair as alt
 import plotly.express as px
-import numpy as np
 import pydeck
 
 #Leer archivo csv
@@ -65,9 +62,6 @@ with tab4:
 
     df_energia_departamento_mapa = df_energias_renovables.groupby(by=['Departamento', 'LATITUD','LONGITUD'], as_index=False).Energía_kWh_día.sum()
     df_energia_departamento_mapa['size'] = df_energia_departamento_mapa['Energía_kWh_día'] * 0.008
-    with st.container(border=True):
-        st.header('Mapa de energia generada')
-        st.map(df_energia_departamento_mapa, latitude='LATITUD', longitude='LONGITUD', size='size')
 
     capas=pydeck.Layer(
         "ScatterplotLayer",
