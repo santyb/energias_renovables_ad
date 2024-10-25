@@ -93,10 +93,8 @@ with tab4:
 with tab5:
     energia_generada = df_energias_renovables.groupby('Departamento').agg({'Energía_kWh_día': 'sum'})
     co2_generad0 = df_energias_renovables.groupby('Departamento').agg({'Emisiones_CO2_Ton_año': 'sum'})
-    print('esta es la energia generada', energia_generada)
 
     resultado = df_energias_renovables.groupby('Departamento')[['Energía_kWh_día', 'Emisiones_CO2_Ton_año']].sum().reset_index()
-    print('esta es el df', resultado)
 
     # Gráfico de barras
     fig = px.bar(resultado, x='Departamento', y=['Energía_kWh_día', 'Emisiones_CO2_Ton_año'],
