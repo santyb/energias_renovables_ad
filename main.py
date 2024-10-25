@@ -4,6 +4,23 @@ import streamlit as st
 import plotly.express as px
 import pydeck
 
+def add_bg_from_url():
+    st.markdown(
+         f"""
+         <style>
+         .stApp {{
+             background-image: url("https://images.unsplash.com/photo-1679580447808-b5b6911aacea");
+             background-size: cover;
+             background-position: center;
+         }}
+         </style>
+         """,
+         unsafe_allow_html=True
+     )
+
+# Call the function to add the background
+add_bg_from_url()
+
 #Leer archivo csv
 def cargar_archivo():
     data = pd.read_csv('data/Meta_FNCER__Incorporar_en_la_matriz_energ_tica_nueva_capacidad_instalada_a_partir_de_Fuentes_No_Convencionales_de_Energ_a_Renovable_-_FNCER_20241003.csv')
