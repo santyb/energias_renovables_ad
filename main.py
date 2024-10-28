@@ -89,7 +89,8 @@ with tab3:
         df_tipo_energia=df_energias_renovables[df_energias_renovables['Departamento']==option].groupby(['Tipo']).Proyecto.count()
 
     fig, ax = plt.subplots()
-    ax.pie(df_tipo_energia, labels=df_tipo_energia.index, autopct='%1.1f%%')
+    ax.pie(df_tipo_energia, labels=df_tipo_energia.index, autopct='%1.1f%%', radius = 0.6)
+    ax.autoscale(True)
     with st.container(border=True):
         st.header('Tipo de energia por departamento')
         st.pyplot(fig)
