@@ -4,6 +4,8 @@ import streamlit as st
 import plotly.express as px
 import pydeck
 
+st.set_page_config(layout="wide")
+
 def add_bg_from_url():
     st.markdown(
          f"""
