@@ -32,14 +32,32 @@ def cargar_posicion():
 
 df_posicion = cargar_posicion()
 df_energias_renovables = cargar_archivo()
+
+##Limpieza de datos
+df_energias_renovables = df_energias_renovables.drop_duplicates()
 df_energias_renovables['Fecha estimada FPO'] = df_energias_renovables['Fecha estimada FPO'].str[:10]
+df_energias_renovables.loc[df_energias_renovables['Proyecto'] == 'PUERTA DE ORO Fase 1', 'Fecha estimada FPO'] = '2023-01-18'
+df_energias_renovables.loc[df_energias_renovables['Proyecto'] == 'PUERTA DE ORO Fase 2', 'Fecha estimada FPO'] = '2025-12-31'
+df_energias_renovables.loc[df_energias_renovables['Proyecto'] == 'OCELOTE', 'Fecha estimada FPO'] = '2021-01-21'
+
 df_energias_renovables.columns = df_energias_renovables.columns.str.replace(' ', '_')
 df_energias_renovables = pd.merge(df_energias_renovables, df_posicion[['Código_Departamento', 'LATITUD', 'LONGITUD']], on='Código_Departamento', how='left')
 df_energias_renovables = df_energias_renovables.rename(columns={'Energía_[kWh/día]': 'Energía_kWh_día'})
 df_energias_renovables = df_energias_renovables.rename(columns={'Emisiones_CO2_[Ton/año]': 'Emisiones_CO2_Ton_año'})
+df_energias_renovables = df_energias_renovables.rename(columns={'Inversión_estimada_[COP]': 'Inversión_estimada_COP'})
+
+# Realizar la operación y guardar el resultado en una nueva columna
+Dias_año=365
+Kg_Ton=1000
+Horas_dia=24
+kWh_MWh=1000
+df_energias_renovables['Eficiencia_CO2'] = (df_energias_renovables['Emisiones_CO2_Ton_año'] / Dias_año*Kg_Ton) / df_energias_renovables['Energía_kWh_día']
+df_energias_renovables['%Utilizacion'] = (df_energias_renovables['Energía_kWh_día']/(df_energias_renovables['Capacidad'] *Horas_dia*kWh_MWh))*100
+df_energias_renovables['Valor_capacidad'] = df_energias_renovables['Inversión_estimada_COP']/df_energias_renovables['Capacidad']
+
 st.title('Energía Renovable Sostenible y Eficiente')
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["Datos", "Proyectos Por Departamento", "Tipo de energia", "Mapa", "Energia Vs CO2"])
+tab1, tab2, tab3, tab4, tab5, tab6, tab7= st.tabs(["Datos", "Proyectos Por Departamento", "Tipo de energia", "Mapa", "Energia VS CO2", "Comparativa x departamentos","Comparativa x tipos de energia"])
 
 with tab1:
     ver_df = st.toggle('Ver DataFrame', value=True)
@@ -60,7 +78,8 @@ with tab3:
     lista_departamento.insert(0, 'Todos')
     option=st.selectbox(
         'Seleccione el departamento',
-        lista_departamento
+        lista_departamento,
+        key='selectbox_departamento'
     )
     if option == 'Todos':
         df_tipo_energia=df_energias_renovables.groupby(['Tipo']).Proyecto.count()
@@ -108,6 +127,7 @@ with tab4:
         )
 
 with tab5:
+
     energia_generada = df_energias_renovables.groupby('Departamento').agg({'Energía_kWh_día': 'sum'})
     co2_generad0 = df_energias_renovables.groupby('Departamento').agg({'Emisiones_CO2_Ton_año': 'sum'})
 
@@ -119,3 +139,79 @@ with tab5:
 
     # Mostrar el gráfico en Streamlit
     st.plotly_chart(fig)
+with tab6:
+
+    tipos_energia = df_energias_renovables['Tipo'].unique().tolist()
+    seleccionados_tipos = st.multiselect('Seleccione los tipos de energía:', tipos_energia)
+
+    # Filtrar el DataFrame según los tipos de energía seleccionados
+    if seleccionados_tipos:
+        df_filtrado = df_energias_renovables[df_energias_renovables['Tipo'].isin(seleccionados_tipos)]
+    else:
+        df_filtrado = df_energias_renovables
+
+    # Calcular el promedio de Eficiencia_CO2 por departamento
+    promedios_departamento = df_filtrado.groupby('Departamento')['Eficiencia_CO2'].mean().reset_index()
+
+    # Crear gráfico de línea con Plotly
+    fig = px.line(promedios_departamento, x='Departamento', y='Eficiencia_CO2', 
+                  title='Promedio de Eficiencia_CO2 por Departamento',
+                  labels={'Eficiencia_CO2': 'Eficiencia_CO2', 'Departamento': 'Departamento'},
+                  markers=True)
+        # Mostrar el gráfico en Streamlit
+    st.plotly_chart(fig)
+
+    promedios_departamento = df_filtrado.groupby('Departamento')['%Utilizacion'].mean().reset_index()
+
+    # Crear gráfico de línea con Plotly
+    fig = px.line(promedios_departamento, x='Departamento', y='%Utilizacion', 
+                  title='Promedio de %Utilizacion por Departamento',
+                  labels={'%Utilizacion': '% Utilizacion', 'Departamento': 'Departamento'},
+                  markers=True)
+
+    # Mostrar el gráfico en Streamlit
+    st.plotly_chart(fig)
+
+    if seleccionados_tipos:
+        df_filtrado = df_energias_renovables[df_energias_renovables['Tipo'].isin(seleccionados_tipos)]
+    else:
+        df_filtrado = df_energias_renovables
+
+    # Calcular el promedio de Valor_capacidad por departamento
+    promedios_departamento = df_filtrado.groupby('Departamento')['Valor_capacidad'].mean().reset_index()
+
+    # Crear gráfico de línea con Plotly
+    fig = px.line(promedios_departamento, x='Departamento', y='Valor_capacidad', 
+                  title='Promedio de Valor_capacidad por Departamento',
+                  labels={'Valor_capacidad': 'Valor de Capacidad (COP)', 'Departamento': 'Departamento'},
+                  markers=True)
+
+    # Mostrar el gráfico en Streamlit
+    st.plotly_chart(fig)
+
+with tab7:
+   
+    # Calcular promedios por tipo de energía
+    promedios_tipo = df_filtrado.groupby('Tipo').agg({
+        'Eficiencia_CO2': 'mean',
+        '%Utilizacion': 'mean',
+        'Valor_capacidad': 'mean'
+    }).reset_index()
+
+    # Gráfico 1: Promedio de Eficiencia_CO2 por Tipo de Energía
+    fig1 = px.bar(promedios_tipo, x='Tipo', y='Eficiencia_CO2',
+                  title='Promedio de Eficiencia_CO2 por Tipo de Energía',
+                  labels={'Eficiencia_CO2': 'Eficiencia CO2'})
+    st.plotly_chart(fig1)
+
+    # Gráfico 2: Promedio de %Utilizacion por Tipo de Energía
+    fig2 = px.bar(promedios_tipo, x='Tipo', y='%Utilizacion',
+                  title='Promedio de %Utilizacion por Tipo de Energía',
+                  labels={'%Utilizacion': '% Utilizacion'})
+    st.plotly_chart(fig2)
+
+    # Gráfico 3: Promedio de Valor_capacidad por Tipo de Energía
+    fig3 = px.bar(promedios_tipo, x='Tipo', y='Valor_capacidad',
+                  title='Promedio de Valor_capacidad por Tipo de Energía',
+                  labels={'Valor_capacidad': 'Valor de Capacidad (COP)'})
+    st.plotly_chart(fig3)
